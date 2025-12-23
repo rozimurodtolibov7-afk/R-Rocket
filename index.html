@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>R-Rocket</title>
+    <style>
+        body { margin: 0; overflow: hidden; background: #0a0a2e; font-family: sans-serif; }
+        canvas { display: block; background: linear-gradient(#001133, #0055aa); }
+        #ui { position: absolute; top: 10px; left: 10px; color: white; font-size: 20px; font-weight: bold; pointer-events: none; }
+        #msg { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; text-align: center; display: none; }
+        .btn { background: #ff4757; color: white; border: none; padding: 10px 20px; border-radius: 20px; font-size: 18px; cursor: pointer; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+<div id="ui">RC: <span id="score">0</span></div>
+<div id="msg">
+    <h1>BOOM! 💥</h1>
+    <p>Sizning balingiz: <span id="finalScore">0</span></p>
+    <button class="btn" onclick="resetGame()">QAYTA BOSHLASH</button>
+</div>
+<canvas id="gameCanvas"></canvas>
+
+<script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+    const scoreEl = document.getElementById("score");
+    const msg = document.getElementById("msg");
+
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    let score = 0;
+    let gameOver = false;
+    let rocket = { x: canvas.width / 2, y: canvas.height - 100, w: 40, h: 60, speed: 5 };
+    let obstacles = [];
+    let frame = 0;
+
+    function drawRocket() {
+        ctx.font = "50px Arial";
+        ctx.fillText("🚀", rocket.x - 20, rocket.y);
+    }
+
+    function createObstacle() {
+        if (frame % 60 === 0) {
+            let size = Math.random() * 50 + 20;
+            obstacles.push({
+                x: Math.random() * (canvas.width - size),
+                y: -size,
+                s: size,
+                speed: Math.random() * 3 + 2
+            });
+        }
+    }
+
+    function drawObstacles() {
+        obstacles.forEach((ob, index) => {
+            ob.y += ob.speed;
+            ctx.font = ob.s + "px Arial";
+            ctx.fillText("☄️", ob.x, ob.y);
+
+            // To'qnashuvni tekshirish
+            if (ob.y + ob.s > rocket.y - 40 && ob.x < rocket.x + 20 && ob.x + ob.s > rocket.x - 20) {
+                endGame();
+            }
+
+            if (ob.y > canvas.height) {
+                obstacles.splice(index, 1);
+                score += 10;
+                scoreEl.innerText = score;
+            }
+        });
+    }
+
+    function update() {
+        if (gameOver) return;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        drawRocket();
+        createObstacle();
+        drawObstacles();
+        frame++;
+        requestAnimationFrame(update);
+    }
+
+    function endGame() {
+        gameOver = true;
+        msg.style.display = "block";
+        document.getElementById("finalScore").innerText = score;
+    }
+
+    function resetGame() {
+        score = 0;
+        scoreEl.innerText = 0;
+        obstacles = [];
+        gameOver = false;
+        msg.style.display = "none";
+        rocket.x = canvas.width / 2;
+        update();
+    }
+
+    window.addEventListener("touchstart", (e) => {
+        let touchX = e.touches[0].clientX;
+        if (touchX < canvas.width / 2) rocket.x -= 30;
+        else rocket.x += 30;
+        
+        // Ekrandan chiqib ketmaslik
+        if (rocket.x < 20) rocket.x = 20;
+        if (rocket.x > canvas.width - 20) rocket.x = canvas.width - 20;
+    });
+
+    update();
+</script>
+</body>
+</html>
